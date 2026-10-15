@@ -852,30 +852,59 @@ function Home() {
   const requiredRedirectUri = status.data?.redirectUri ?? "";
 
   return (
-    <main className="min-h-screen px-4 py-10 md:py-16">
+    <main className="min-h-screen px-4 py-6 md:px-8">
       <Toaster />
       <div
         className="pointer-events-none fixed inset-x-0 top-0 h-80"
         style={{ background: "var(--gradient-hero)" }}
         aria-hidden
       />
-      <div className="relative mx-auto max-w-3xl space-y-6">
-        <header className="relative space-y-5 overflow-hidden rounded-3xl border border-border bg-card px-6 py-10 text-center md:py-14" style={{ boxShadow: "var(--shadow-panel)" }}>
-          <div className="pointer-events-none absolute -top-24 left-1/2 size-72 -translate-x-1/2 rounded-full bg-primary/30 blur-3xl" aria-hidden />
-          <div className="relative inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-1.5 text-xs font-semibold tracking-widest text-primary uppercase">
-            <span className="size-2 animate-pulse rounded-full bg-primary" /> Drive → YouTube Studio
+      <div className="relative mx-auto max-w-7xl space-y-6">
+        <nav className="flex items-center justify-between rounded-2xl border border-border bg-card/60 px-4 py-3 backdrop-blur-xl">
+          <div className="flex items-center gap-3">
+            <span className="grid size-9 place-items-center rounded-xl text-primary-foreground" style={{ background: "var(--gradient-primary)" }}><Youtube className="size-5" /></span>
+            <div className="leading-tight">
+              <p className="font-bold tracking-tight" style={{ fontFamily: "Space Grotesk" }}>DriveTube Studio</p>
+              <p className="text-xs text-muted-foreground">Drive → YouTube otomatis</p>
+            </div>
           </div>
-          <h1 className="relative text-4xl font-bold tracking-tight md:text-6xl">Unggah video <span className="text-gold">Drive</span><br className="hidden md:block" /> ke <span className="text-gold">YouTube</span> otomatis</h1>
-          <p className="relative mx-auto max-w-xl text-muted-foreground">
-            Tempel link Google Drive yang aksesnya publik, lalu sistem mengunggahnya langsung ke
-            channel YouTube Anda.
-          </p>
-          <div className="relative flex flex-wrap justify-center gap-2 text-xs">
-            {[{ i: UploadCloud, t: "Upload langsung" }, { i: CalendarClock, t: "Jadwal otomatis" }, { i: Sparkles, t: "Analisis AI" }].map(({ i: I, t }) => (
-              <span key={t} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/60 px-3 py-1.5 text-secondary-foreground"><I className="size-3.5 text-accent" />{t}</span>
+          <div className="flex items-center gap-2">
+            <span className={`hidden items-center gap-1.5 rounded-full border px-3 py-1 text-xs sm:inline-flex ${connected ? "border-accent/40 text-accent" : "border-border text-muted-foreground"}`}>
+              <span className={`size-2 rounded-full ${connected ? "animate-pulse bg-accent" : "bg-muted-foreground"}`} />
+              {connected ? `${accounts.length} channel aktif` : "Belum terhubung"}
+            </span>
+            <Button asChild size="sm" variant="secondary"><Link to="/laporan"><History className="size-4" /> Laporan</Link></Button>
+          </div>
+        </nav>
+
+        <header className="relative grid items-center gap-6 overflow-hidden rounded-3xl border border-border bg-card p-6 md:grid-cols-[1.4fr_1fr] md:p-10" style={{ boxShadow: "var(--shadow-panel)" }}>
+          <div className="pointer-events-none absolute -top-32 -left-20 size-96 rounded-full bg-primary/25 blur-3xl" aria-hidden />
+          <div className="pointer-events-none absolute -right-20 -bottom-32 size-80 rounded-full bg-accent/15 blur-3xl" aria-hidden />
+          <div className="relative space-y-4 text-left">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-semibold tracking-widest text-primary uppercase">
+              <span className="size-1.5 animate-pulse rounded-full bg-primary" /> Studio Otomasi
+            </div>
+            <h1 className="text-4xl font-bold leading-[1.05] tracking-tight md:text-6xl">Dari <span className="text-gold">Drive</span><br />langsung tayang di <span className="text-gold">YouTube</span></h1>
+            <p className="max-w-lg text-muted-foreground">Tempel link Google Drive publik, atur jadwal, dan biarkan sistem mengunggah ke semua channel Anda.</p>
+          </div>
+          <div className="relative grid grid-cols-2 gap-3">
+            {[
+              { i: Youtube, k: "Channel", v: String(accounts.length) },
+              { i: UploadCloud, k: "Upload", v: String(uploads.data?.length ?? 0) },
+              { i: CalendarClock, k: "Terjadwal", v: "Auto" },
+              { i: Sparkles, k: "Analisis", v: "AI" },
+            ].map(({ i: I, k, v }) => (
+              <div key={k} className="rounded-2xl border border-border bg-secondary/50 p-4 transition-transform hover:-translate-y-1">
+                <I className="mb-3 size-5 text-accent" />
+                <p className="text-2xl font-bold" style={{ fontFamily: "Space Grotesk" }}>{v}</p>
+                <p className="text-xs text-muted-foreground">{k}</p>
+              </div>
             ))}
           </div>
         </header>
+
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+        <div className="space-y-6 lg:sticky lg:top-6">
 
 
 
@@ -1054,6 +1083,8 @@ function Home() {
             </div>
           </div>
         </section>
+        </div>
+        <div className="min-w-0 space-y-6">
 
         <section
           className="space-y-5 rounded-2xl border border-border bg-card p-4 sm:p-6"
@@ -1452,6 +1483,8 @@ function Home() {
             )}
           </div>
         </section>
+        </div>
+        </div>
 
 
 

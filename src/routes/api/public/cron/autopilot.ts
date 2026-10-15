@@ -8,14 +8,9 @@ import { createFileRoute } from "@tanstack/react-router";
  * Diamankan dengan header `apikey` berisi publishable key project.
  */
 async function handle(request: Request) {
-  const apiKey = request.headers.get("apikey") ?? "";
-  const expected = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"] ?? "";
-  if (!expected || apiKey !== expected) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  const { authenticateCronRequest } = await import("@/integrations/supabase/cron-auth");
+  const authFailure = await authenticateCronRequest(request);
+  if (authFailure) return authFailure;
 
   try {
     // Saklar global: kalau OFF, sistem tidak memindai Drive maupun mengunggah —

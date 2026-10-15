@@ -852,23 +852,29 @@ function Home() {
   const requiredRedirectUri = status.data?.redirectUri ?? "";
 
   return (
-    <main className="min-h-screen px-4 py-12">
+    <main className="min-h-screen px-4 py-10 md:py-16">
       <Toaster />
       <div
         className="pointer-events-none fixed inset-x-0 top-0 h-80"
         style={{ background: "var(--gradient-hero)" }}
         aria-hidden
       />
-      <div className="relative mx-auto max-w-2xl space-y-8">
-        <header className="space-y-3 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs tracking-widest text-muted-foreground uppercase">
-            <Youtube className="size-4 text-primary" /> Drive → YouTube
+      <div className="relative mx-auto max-w-3xl space-y-6">
+        <header className="relative space-y-5 overflow-hidden rounded-3xl border border-border bg-card px-6 py-10 text-center md:py-14" style={{ boxShadow: "var(--shadow-panel)" }}>
+          <div className="pointer-events-none absolute -top-24 left-1/2 size-72 -translate-x-1/2 rounded-full bg-primary/30 blur-3xl" aria-hidden />
+          <div className="relative inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-1.5 text-xs font-semibold tracking-widest text-primary uppercase">
+            <span className="size-2 animate-pulse rounded-full bg-primary" /> Drive → YouTube Studio
           </div>
-          <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">Unggah video <span className="text-gold">Drive</span> ke <span className="text-gold">YouTube</span></h1>
-          <p className="text-muted-foreground">
+          <h1 className="relative text-4xl font-bold tracking-tight md:text-6xl">Unggah video <span className="text-gold">Drive</span><br className="hidden md:block" /> ke <span className="text-gold">YouTube</span> otomatis</h1>
+          <p className="relative mx-auto max-w-xl text-muted-foreground">
             Tempel link Google Drive yang aksesnya publik, lalu sistem mengunggahnya langsung ke
             channel YouTube Anda.
           </p>
+          <div className="relative flex flex-wrap justify-center gap-2 text-xs">
+            {[{ i: UploadCloud, t: "Upload langsung" }, { i: CalendarClock, t: "Jadwal otomatis" }, { i: Sparkles, t: "Analisis AI" }].map(({ i: I, t }) => (
+              <span key={t} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/60 px-3 py-1.5 text-secondary-foreground"><I className="size-3.5 text-accent" />{t}</span>
+            ))}
+          </div>
         </header>
 
 

@@ -904,7 +904,7 @@ function Home() {
         </header>
 
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
-        <div className="space-y-6 lg:sticky lg:top-6">
+        <div className="space-y-6">
 
 
 

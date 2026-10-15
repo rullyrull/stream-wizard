@@ -1357,16 +1357,27 @@ function Home() {
                         return (
                           <div className="space-y-1 sm:col-span-3">
                             <div className="flex items-center justify-between gap-2">
-                              <p className="text-xs font-medium text-muted-foreground">
-                                Riwayat upload ({items.length + ytOnly.length}) • {nf(totalViews)} view
-                                {ch ? ` • ${nf(Number(ch.subscribers))} subscriber` : ""}
-                              </p>
+                              <button
+                                type="button"
+                                className="flex min-w-0 items-center gap-1 text-left text-xs font-medium text-muted-foreground hover:text-foreground"
+                                aria-expanded={!!openHistory[c.id]}
+                                onClick={() => setOpenHistory((s) => ({ ...s, [c.id]: !s[c.id] }))}
+                              >
+                                <ChevronDown className={`size-3.5 shrink-0 transition-transform ${openHistory[c.id] ? "" : "-rotate-90"}`} />
+                                <span className="truncate">
+                                  Riwayat upload ({items.length + ytOnly.length}) • {nf(totalViews)} view
+                                  {ch ? ` • ${nf(Number(ch.subscribers))} subscriber` : ""}
+                                </span>
+                              </button>
                               <Button
                                 size="sm"
                                 variant="outline"
                                 className="h-7 shrink-0 px-2 text-xs"
                                 disabled={fetchHistory.isPending}
-                                onClick={() => fetchHistory.mutate(c.id)}
+                                onClick={() => {
+                                  setOpenHistory((s) => ({ ...s, [c.id]: true }));
+                                  fetchHistory.mutate(c.id);
+                                }}
                               >
                                 {fetchHistory.isPending && fetchHistory.variables === c.id ? (
                                   <Loader2 className="size-3.5 animate-spin" />
@@ -1376,7 +1387,7 @@ function Home() {
                                 Ambil riwayat
                               </Button>
                             </div>
-                            {items.length + ytOnly.length === 0 ? (
+                            {!openHistory[c.id] ? null : items.length + ytOnly.length === 0 ? (
                               <p className="text-xs text-muted-foreground">Belum ada riwayat.</p>
                             ) : (
                               <ul className="divide-y sm:max-h-56 divide-border rounded-lg border border-border sm:overflow-y-auto">

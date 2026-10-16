@@ -639,8 +639,10 @@ async function rescheduleChannelQueue(
       .maybeSingle(),
   ]);
   // Jam tayang mengikuti hasil evaluasi terbaru bila ada.
-  const slotTimes: string =
-    insight?.best_hours?.trim() || settings?.slot_times || "12:00,19:00";
+  const { stripQuietMorning } = await import("./schedule.server");
+  const slotTimes: string = stripQuietMorning(
+    insight?.best_hours?.trim() || settings?.slot_times || "12:00,19:00",
+  );
   const timeZone: string = settings?.timezone ?? "Asia/Jakarta";
 
   const { data: queue, error } = await supabaseAdmin

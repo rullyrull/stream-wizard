@@ -54,6 +54,17 @@ export function todayInZone(timeZone: string, now = new Date()) {
   return { year: year!, month: month!, day: day! };
 }
 
+/** Buang slot pagi (sebelum 10:00) dari daftar slot "HH:MM,HH:MM" — pagi biasanya sepi. */
+export function stripQuietMorning(slotTimes: string): string {
+  return (slotTimes ?? "")
+    .split(/[,\s]+/)
+    .filter((s) => {
+      const m = /^(\d{1,2}):(\d{2})$/.exec(s);
+      return m !== null && Number(m[1]) >= 10;
+    })
+    .join(",");
+}
+
 /** Ubah "06:00,13:00,19:00" menjadi daftar {hour, minute} terurut & unik. */
 export function parseSlotTimes(input: string): Array<{ hour: number; minute: number }> {
   const slots = (input ?? "")

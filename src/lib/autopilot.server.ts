@@ -104,7 +104,8 @@ export async function scanAutopilot(row: AutopilotRow) {
     .select("best_hours")
     .eq("channel_id", row.channel_id)
     .maybeSingle();
-  const slotTimes = insight?.best_hours?.trim() || row.slot_times;
+  const { stripQuietMorning } = await import("./schedule.server");
+  const slotTimes = stripQuietMorning(insight?.best_hours?.trim() || row.slot_times);
 
   const { localDate } = await import("./daily-report.server");
   const today = localDate(new Date(), row.timezone);
@@ -371,8 +372,10 @@ export async function enableAutopilotForAllChannels() {
     supabaseAdmin.from("channel_autopilot").select("channel_id"),
     supabaseAdmin.from("channel_insights").select("channel_id, best_hours"),
   ]);
-  const have = new Set((existing ?? []).map((r) => r.channel_id));
-  const best = new Map((insights ?? []).map((r) => [r.channel_id, r.best_hours]));
+  const { stripQuietMorning } = await import("./schedule.server");
+  const best = new Map(
+    (insights ?? []).map((r) => [r.channel_id, stripQuietMorning(r.best_hours ?? "")]),
+  );
   let created = 0;
   for (const s of settings ?? []) {
     if (have.has(s.channel_id) || !s.folder_url?.trim()) continue;

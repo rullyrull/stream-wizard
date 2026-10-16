@@ -139,7 +139,8 @@ export const scheduleSelectedVideos = createServerFn({ method: "POST" })
           .eq("channel_id", data.channelId)
           .maybeSingle()
       : { data: null };
-    const slotTimes = insight?.best_hours?.trim() || data.slotTimes;
+    const { stripQuietMorning } = await import("./schedule.server");
+    const slotTimes = stripQuietMorning(insight?.best_hours?.trim() || data.slotTimes);
     const today = localDate(new Date(), data.timezone);
     const slotsToday = buildSlotSchedule({
       count: 24,
@@ -282,7 +283,8 @@ export const autoScheduleFolder = createServerFn({ method: "POST" })
           .eq("channel_id", data.channelId)
           .maybeSingle()
       : { data: null };
-    const slotTimes = insight?.best_hours?.trim() || data.slotTimes;
+    const { stripQuietMorning } = await import("./schedule.server");
+    const slotTimes = stripQuietMorning(insight?.best_hours?.trim() || data.slotTimes);
     const today = localDate(new Date(), data.timezone);
     const slotsToday = buildSlotSchedule({
       count: 24,

@@ -61,10 +61,10 @@ function RiwayatPage() {
 
   const tabs = [
     ["all", "Semua", rows.length],
-    ["done", "Terupload", counts.done ?? 0],
-    ["scheduled", "Terjadwal", counts.scheduled ?? 0],
-    ["pending", "Menunggu", (counts.pending ?? 0) + (counts.uploading ?? 0)],
-    ["failed", "Gagal", counts.failed ?? 0],
+    ["done", "Terupload", counts["done"] ?? 0],
+    ["scheduled", "Terjadwal", counts["scheduled"] ?? 0],
+    ["pending", "Menunggu", (counts["pending"] ?? 0) + (counts["uploading"] ?? 0)],
+    ["failed", "Gagal", counts["failed"] ?? 0],
   ] as const;
 
   return (

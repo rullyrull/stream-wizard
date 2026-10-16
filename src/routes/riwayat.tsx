@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { ArrowLeft, ExternalLink, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { listUploads } from "@/lib/youtube.functions";
+import { listUploads, listVideoStats } from "@/lib/youtube.functions";
 
 export const Route = createFileRoute("/riwayat")({
   head: () => ({
@@ -83,6 +83,9 @@ function RiwayatPage() {
           </Button>
         </header>
 
+        <VideoStats names={Object.fromEntries(channels)} />
+
+        <h2 className="pt-4 text-xl font-semibold">Upload dari aplikasi</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           {tabs.map(([k, label, n]) => (
             <button
@@ -166,5 +169,76 @@ function RiwayatPage() {
         )}
       </div>
     </main>
+  );
+}
+
+const n = (v: number) => Number(v).toLocaleString("id-ID");
+
+function VideoStats({ names }: { names: Record<string, string> }) {
+  const fn = useServerFn(listVideoStats);
+  const q = useQuery({ queryKey: ["video-stats"], queryFn: () => fn(), refetchInterval: 5 * 60_000 });
+  const all = q.data ?? [];
+  const [ch, setCh] = useState("all");
+  const [sort, setSort] = useState<"published_at" | "views">("published_at");
+  const [limit, setLimit] = useState(30);
+  const chIds = [...new Set(all.map((v) => v.channel_id).filter(Boolean))] as string[];
+  const rows = all
+    .filter((v) => ch === "all" || v.channel_id === ch)
+    .sort((a, b) =>
+      sort === "views" ? Number(b.views) - Number(a.views) : String(b.published_at ?? "").localeCompare(String(a.published_at ?? "")),
+    );
+  const tot = (k: "views" | "likes" | "comments") => rows.reduce((a, r) => a + Number(r[k]), 0);
+  const avg = rows.length ? Math.round(tot("views") / rows.length) : 0;
+
+  return (
+    <section className="space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h2 className="text-xl font-semibold">Statistik video</h2>
+        <div className="flex gap-2">
+          <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={ch} onChange={(e) => setCh(e.target.value)}>
+            <option value="all">Semua channel</option>
+            {chIds.map((id) => <option key={id} value={id}>{names[id] ?? id}</option>)}
+          </select>
+          <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
+            <option value="published_at">Terbaru</option>
+            <option value="views">Views terbanyak</option>
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        {([["Video", rows.length], ["Total views", tot("views")], ["Rata-rata views", avg], ["Likes", tot("likes")], ["Komentar", tot("comments")]] as const).map(([l, v]) => (
+          <div key={l} className="rounded-xl border border-border bg-card p-4">
+            <div className="text-xs text-muted-foreground">{l}</div>
+            <div className="text-2xl font-semibold">{n(v)}</div>
+          </div>
+        ))}
+      </div>
+      <div className="overflow-x-auto rounded-xl border border-border bg-card">
+        <table className="w-full text-sm">
+          <thead className="border-b border-border text-left text-xs text-muted-foreground">
+            <tr><th className="p-3">Video</th><th className="p-3">Channel</th><th className="p-3">Tayang</th><th className="p-3 text-right">Views</th><th className="p-3 text-right">Likes</th><th className="p-3 text-right">Komentar</th></tr>
+          </thead>
+          <tbody>
+            {q.isLoading && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Memuat…</td></tr>}
+            {!q.isLoading && rows.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Belum ada statistik. Klik "Ambil riwayat" di halaman utama.</td></tr>}
+            {rows.slice(0, limit).map((v) => (
+              <tr key={v.video_id} className="border-b border-border/60 last:border-0 hover:bg-muted/40">
+                <td className="max-w-sm p-3">
+                  <a href={`https://youtu.be/${v.video_id}`} target="_blank" rel="noreferrer" className="block truncate font-medium hover:text-primary">{v.title ?? v.video_id}</a>
+                </td>
+                <td className="p-3 text-muted-foreground">{(v.channel_id && names[v.channel_id]) ?? "—"}</td>
+                <td className="whitespace-nowrap p-3 text-muted-foreground">{fmtDate(v.published_at)}</td>
+                <td className="p-3 text-right font-medium">{n(v.views)}</td>
+                <td className="p-3 text-right">{n(v.likes)}</td>
+                <td className="p-3 text-right">{n(v.comments)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {rows.length > limit && (
+        <div className="text-center"><Button variant="outline" onClick={() => setLimit((l) => l + 30)}>Tampilkan lagi ({rows.length - limit} tersisa)</Button></div>
+      )}
+    </section>
   );
 }

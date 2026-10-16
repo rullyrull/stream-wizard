@@ -143,7 +143,7 @@ export function bestHoursFrom(rows: StatRow[], timeZone: string, want = 3) {
     buckets.set(h, b);
   }
   const ranked = [...buckets.entries()]
-    .filter(([, b]) => b.n >= 2)
+    .filter(([h, b]) => b.n >= 2 && h >= 10)
     .map(([h, b]) => ({ hour: h, avg: b.total / b.n }))
     .sort((a, b) => b.avg - a.avg)
     .slice(0, want)

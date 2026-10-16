@@ -132,7 +132,7 @@ function ChannelWorkspace() {
   const [kind, setKind] = useState<"video" | "reels">("video");
   const [mode, setMode] = useState<"now" | "schedule">("now");
   const [scheduledAt, setScheduledAt] = useState("");
-  const [slotTimes, setSlotTimes] = useState("07:00,12:00,19:00");
+  const [slotTimes, setSlotTimes] = useState("12:00,19:00");
   const [startDate, setStartDate] = useState("");
   const [maxVideos, setMaxVideos] = useState("50");
   const [timezone, setTimezone] = useState("Asia/Makassar");
@@ -604,14 +604,14 @@ function ChannelWorkspace() {
               <Label htmlFor="slot-times">Slot jam harian</Label>
               <Input
                 id="slot-times"
-                placeholder="07:00,12:00,19:00"
+                placeholder="12:00,19:00"
                 value={slotTimes}
                 onChange={(e) => setSlotTimes(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Jam tayang terbaik untuk audiens Indonesia: 06:00–08:00, 12:00–13:00, dan
-                19:00–22:00. Hindari jam sepi (01:00–05:00) dan jangan menumpuk lebih dari 3 video
-                per hari agar impresi tiap video tidak terpecah.
+                Jam tayang terbaik untuk audiens Indonesia: 12:00–13:00 dan 19:00–22:00. Pagi hari
+                (sebelum 10:00) biasanya sepi, jadi hindari jam 07:00. Jangan menumpuk lebih dari 3
+                video per hari agar impresi tiap video tidak terpecah.
               </p>
             </div>
             <div className="space-y-2">

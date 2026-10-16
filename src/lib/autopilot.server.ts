@@ -104,7 +104,8 @@ export async function scanAutopilot(row: AutopilotRow) {
     .select("best_hours")
     .eq("channel_id", row.channel_id)
     .maybeSingle();
-  const slotTimes = insight?.best_hours?.trim() || row.slot_times;
+  const { stripQuietMorning } = await import("./schedule.server");
+  const slotTimes = stripQuietMorning(insight?.best_hours?.trim() || row.slot_times);
 
   const { localDate } = await import("./daily-report.server");
   const today = localDate(new Date(), row.timezone);
@@ -372,7 +373,10 @@ export async function enableAutopilotForAllChannels() {
     supabaseAdmin.from("channel_insights").select("channel_id, best_hours"),
   ]);
   const have = new Set((existing ?? []).map((r) => r.channel_id));
-  const best = new Map((insights ?? []).map((r) => [r.channel_id, r.best_hours]));
+  const { stripQuietMorning } = await import("./schedule.server");
+  const best = new Map(
+    (insights ?? []).map((r) => [r.channel_id, stripQuietMorning(r.best_hours ?? "")]),
+  );
   let created = 0;
   for (const s of settings ?? []) {
     if (have.has(s.channel_id) || !s.folder_url?.trim()) continue;
@@ -380,7 +384,7 @@ export async function enableAutopilotForAllChannels() {
       channelId: s.channel_id,
       channelTitle: s.channel_title,
       folderUrl: s.folder_url,
-      slotTimes: best.get(s.channel_id) || "07:00,12:30,19:00",
+      slotTimes: best.get(s.channel_id) || "12:30,19:00",
       timezone: s.timezone || "Asia/Makassar",
       kind: s.kind || "short",
       privacy: s.privacy || "public",
@@ -410,7 +414,7 @@ export async function syncChannelToSchedule(channelId: string, channelTitle?: st
       channel_id: channelId,
       channel_title: title,
       folder_url: folderUrl,
-      slot_times: existing?.slot_times ?? app?.slot_times ?? "07:00,12:00,19:00",
+      slot_times: existing?.slot_times ?? app?.slot_times ?? "12:00,19:00",
       timezone: existing?.timezone ?? app?.timezone ?? "Asia/Jakarta",
       kind: existing?.kind ?? cs?.kind ?? "short",
       privacy: existing?.privacy ?? cs?.privacy ?? "public",

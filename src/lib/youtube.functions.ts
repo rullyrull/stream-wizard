@@ -230,7 +230,7 @@ export const getAppSettings = createServerFn({ method: "GET" }).handler(async ()
     kind: data?.default_kind === "reels" ? "reels" : "video",
     privacy: data?.default_privacy ?? "public",
     description: data?.default_description ?? "",
-    slotTimes: data?.slot_times ?? "07:00,12:00,19:00",
+    slotTimes: data?.slot_times ?? "12:00,19:00",
     timezone: data?.timezone ?? "Asia/Jakarta",
   };
 });
@@ -252,7 +252,7 @@ export const saveAppSettings = createServerFn({ method: "POST" })
       ? input.privacy!
       : "public",
     description: (input.description ?? "").slice(0, 4500),
-    slotTimes: input.slotTimes?.trim() || "07:00,12:00,19:00",
+    slotTimes: input.slotTimes?.trim() || "12:00,19:00",
     timezone: input.timezone?.trim() || "Asia/Jakarta",
   }))
   .handler(async ({ data }) => {
@@ -639,8 +639,10 @@ async function rescheduleChannelQueue(
       .maybeSingle(),
   ]);
   // Jam tayang mengikuti hasil evaluasi terbaru bila ada.
-  const slotTimes: string =
-    insight?.best_hours?.trim() || settings?.slot_times || "07:00,12:00,19:00";
+  const { stripQuietMorning } = await import("./schedule.server");
+  const slotTimes: string = stripQuietMorning(
+    insight?.best_hours?.trim() || settings?.slot_times || "12:00,19:00",
+  );
   const timeZone: string = settings?.timezone ?? "Asia/Jakarta";
 
   const { data: queue, error } = await supabaseAdmin

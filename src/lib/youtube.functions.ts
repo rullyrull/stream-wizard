@@ -743,3 +743,14 @@ export const deleteChannelVideo = createServerFn({ method: "POST" })
     await supabaseAdmin.from("video_stats").delete().eq("video_id", data.videoId);
     return { ok: true };
   });
+
+/** Statistik semua video channel (views, likes, komentar) untuk halaman Riwayat. */
+export const listVideoStats = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("video_stats")
+    .select("video_id, channel_id, kind, title, published_at, views, likes, comments, checked_at")
+    .order("published_at", { ascending: false })
+    .limit(2000);
+  return data ?? [];
+});

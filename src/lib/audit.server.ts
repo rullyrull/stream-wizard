@@ -7,7 +7,7 @@
  */
 
 const MIN_VIEWS = 100;
-const AUDIT_AFTER_MINUTES = 24 * 60;
+const AUDIT_AFTER_MINUTES = 12 * 60; // audit 12 jam setelah tayang
 const AUDIT_WINDOW_HOURS = 72; // jangan audit video yang sudah terlalu lama
 
 type VideoCheck = {

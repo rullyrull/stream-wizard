@@ -60,7 +60,7 @@ async function handle(request: Request) {
       : { skipped: true };
     const uploads = await runner.processDueUploads().catch((e) => ({ error: String(e) }));
     const republished = await republishStuckPrivateVideos();
-    // Audit 24 jam: video dengan view < 100 dihapus permanen dari YouTube.
+    // Audit 12 jam: video dengan view < 100 dihapus permanen dari YouTube.
     const audit = await import("@/lib/audit.server")
       .then(({ auditPublishedUploads }) => auditPublishedUploads())
       .catch((e) => ({ error: String(e) }));

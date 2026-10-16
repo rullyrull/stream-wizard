@@ -372,6 +372,7 @@ export async function enableAutopilotForAllChannels() {
     supabaseAdmin.from("channel_autopilot").select("channel_id"),
     supabaseAdmin.from("channel_insights").select("channel_id, best_hours"),
   ]);
+  const have = new Set((existing ?? []).map((r) => r.channel_id));
   const { stripQuietMorning } = await import("./schedule.server");
   const best = new Map(
     (insights ?? []).map((r) => [r.channel_id, stripQuietMorning(r.best_hours ?? "")]),

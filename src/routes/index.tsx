@@ -74,6 +74,7 @@ import {
   setAutopilotEnabled,
   getAutopilotMasterSwitch,
   setAutopilotMasterSwitch,
+  applyAutoScheduleAll,
 } from "@/lib/autopilot.functions";
 import { getPerformance, refreshVideoStats } from "@/lib/performance.functions";
 import {
@@ -166,6 +167,15 @@ function Home() {
           : "Mode otomatis MATI — semua upload dikerjakan manual.",
       );
       queryClient.invalidateQueries({ queryKey: ["yt-master-switch"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const applyAllFn = useServerFn(applyAutoScheduleAll);
+  const applyAll = useMutation({
+    mutationFn: () => applyAllFn(),
+    onSuccess: (r) => {
+      toast.success(`Jam tayang otomatis diterapkan ke ${r.channels.length} channel.`);
+      queryClient.invalidateQueries({ queryKey: ["yt-autopilots"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -902,6 +912,38 @@ function Home() {
             ))}
           </div>
         </header>
+
+        <section className="rounded-2xl border border-border bg-card p-6" style={{ boxShadow: "var(--shadow-panel)" }}>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="flex items-center gap-2 text-lg font-medium"><CalendarClock className="size-5 text-accent" /> Jadwal otomatis semua channel</h2>
+              <p className="text-sm text-muted-foreground">Jam tayang tiap channel dipilih otomatis dari analisis penonton dan diperbarui sendiri setiap hari. Channel yang datanya belum cukup memakai jam cadangan.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={masterSwitch.data?.enabled ?? true ? "default" : "secondary"}
+                onClick={() => toggleMaster.mutate(!(masterSwitch.data?.enabled ?? true))}
+                disabled={toggleMaster.isPending}
+              >
+                Mode otomatis: {masterSwitch.data?.enabled ?? true ? "NYALA" : "MATI"}
+              </Button>
+              <Button variant="secondary" onClick={() => applyAll.mutate()} disabled={applyAll.isPending}>
+                {applyAll.isPending ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+                Terapkan ke semua channel sekarang
+              </Button>
+            </div>
+          </div>
+          {(autopilots.data ?? []).length > 0 && (
+            <ul className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {(autopilots.data ?? []).map((ap) => (
+                <li key={ap.channel_id} className="rounded-xl border border-border bg-secondary/40 px-3 py-2 text-sm">
+                  <p className="truncate font-medium">{ap.channel_title ?? ap.channel_id}</p>
+                  <p className="text-xs text-muted-foreground">Jam tayang: {ap.slot_times.split(",").join(" · ")}{ap.enabled ? "" : " (dijeda)"}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
         <div className="space-y-6">

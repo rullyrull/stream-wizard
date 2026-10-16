@@ -141,3 +141,34 @@ export const setAutopilotMasterSwitch = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/**
+ * Atur jam tayang otomatis untuk SEMUA channel sekaligus:
+ * analisis ulang performa tiap channel, lalu pasang jam terbaik hasil analisis.
+ * Channel yang datanya belum cukup tetap memakai jam cadangan.
+ */
+export const applyAutoScheduleAll = createServerFn({ method: "POST" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const analytics = await import("./analytics.server");
+  const autopilot = await import("./autopilot.server");
+  await autopilot.enableAutopilotForAllChannels().catch(() => null);
+  await analytics.collectVideoStats().catch(() => null);
+  await analytics.refreshChannelInsights(0).catch(() => null);
+  const [{ data: aps }, { data: ins }] = await Promise.all([
+    supabaseAdmin.from("channel_autopilot").select("channel_id, channel_title, slot_times"),
+    supabaseAdmin.from("channel_insights").select("channel_id, best_hours"),
+  ]);
+  const best = new Map((ins ?? []).map((r) => [r.channel_id, r.best_hours?.trim() || null]));
+  const result: Array<{ channelTitle: string | null; slotTimes: string; fromAnalysis: boolean }> = [];
+  for (const ap of aps ?? []) {
+    const b = best.get(ap.channel_id);
+    if (b && b !== ap.slot_times) {
+      await supabaseAdmin
+        .from("channel_autopilot")
+        .update({ slot_times: b, updated_at: new Date().toISOString() })
+        .eq("channel_id", ap.channel_id);
+    }
+    result.push({ channelTitle: ap.channel_title, slotTimes: b || ap.slot_times, fromAnalysis: !!b });
+  }
+  return { channels: result };
+});

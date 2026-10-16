@@ -883,6 +883,7 @@ function Home() {
               <span className={`size-2 rounded-full ${connected ? "animate-pulse bg-accent" : "bg-muted-foreground"}`} />
               {connected ? `${accounts.length} channel aktif` : "Belum terhubung"}
             </span>
+            <Button asChild size="sm" variant="secondary"><Link to="/riwayat"><History className="size-4" /> Riwayat</Link></Button>
             <Button asChild size="sm" variant="secondary"><Link to="/laporan"><History className="size-4" /> Laporan</Link></Button>
           </div>
         </nav>

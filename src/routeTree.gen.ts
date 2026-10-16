@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LaporanRouteImport } from './routes/laporan'
+import { Route as RiwayatRouteImport } from './routes/riwayat'
 import { Route as ChannelChannelIdRouteImport } from './routes/channel.$channelId'
 import { Route as ApiPublicCronAutopilotRouteImport } from './routes/api/public/cron/autopilot'
 import { Route as ApiPublicYoutubeAuthRouteImport } from './routes/api/public/youtube/auth'
@@ -24,6 +25,11 @@ const IndexRoute = IndexRouteImport.update({
 const LaporanRoute = LaporanRouteImport.update({
   id: '/laporan',
   path: '/laporan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RiwayatRoute = RiwayatRouteImport.update({
+  id: '/riwayat',
+  path: '/riwayat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChannelChannelIdRoute = ChannelChannelIdRouteImport.update({
@@ -51,6 +57,7 @@ const ApiPublicYoutubeCallbackRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/laporan': typeof LaporanRoute
+  '/riwayat': typeof RiwayatRoute
   '/channel/$channelId': typeof ChannelChannelIdRoute
   '/api/public/cron/autopilot': typeof ApiPublicCronAutopilotRoute
   '/api/public/youtube/auth': typeof ApiPublicYoutubeAuthRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/laporan': typeof LaporanRoute
+  '/riwayat': typeof RiwayatRoute
   '/channel/$channelId': typeof ChannelChannelIdRoute
   '/api/public/cron/autopilot': typeof ApiPublicCronAutopilotRoute
   '/api/public/youtube/auth': typeof ApiPublicYoutubeAuthRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/laporan': typeof LaporanRoute
+  '/riwayat': typeof RiwayatRoute
   '/channel/$channelId': typeof ChannelChannelIdRoute
   '/api/public/cron/autopilot': typeof ApiPublicCronAutopilotRoute
   '/api/public/youtube/auth': typeof ApiPublicYoutubeAuthRoute
@@ -78,6 +87,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/laporan'
+    | '/riwayat'
     | '/channel/$channelId'
     | '/api/public/cron/autopilot'
     | '/api/public/youtube/auth'
@@ -86,6 +96,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/laporan'
+    | '/riwayat'
     | '/channel/$channelId'
     | '/api/public/cron/autopilot'
     | '/api/public/youtube/auth'
@@ -94,6 +105,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/laporan'
+    | '/riwayat'
     | '/channel/$channelId'
     | '/api/public/cron/autopilot'
     | '/api/public/youtube/auth'
@@ -103,6 +115,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LaporanRoute: typeof LaporanRoute
+  RiwayatRoute: typeof RiwayatRoute
   ChannelChannelIdRoute: typeof ChannelChannelIdRoute
   ApiPublicCronAutopilotRoute: typeof ApiPublicCronAutopilotRoute
   ApiPublicYoutubeAuthRoute: typeof ApiPublicYoutubeAuthRoute
@@ -123,6 +136,13 @@ declare module '@tanstack/react-router' {
       path: '/laporan'
       fullPath: '/laporan'
       preLoaderRoute: typeof LaporanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/riwayat': {
+      id: '/riwayat'
+      path: '/riwayat'
+      fullPath: '/riwayat'
+      preLoaderRoute: typeof RiwayatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/channel/$channelId': {
@@ -159,6 +179,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LaporanRoute: LaporanRoute,
+  RiwayatRoute: RiwayatRoute,
   ChannelChannelIdRoute: ChannelChannelIdRoute,
   ApiPublicCronAutopilotRoute: ApiPublicCronAutopilotRoute,
   ApiPublicYoutubeAuthRoute: ApiPublicYoutubeAuthRoute,

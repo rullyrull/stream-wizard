@@ -220,7 +220,7 @@ function Home() {
   const [privacy, setPrivacy] = useState("public");
   const [channelId, setChannelId] = useState("");
   const [kind, setKind] = useState<"video" | "reels">("video");
-  const [slotTimes, setSlotTimes] = useState("07:00,12:00,19:00");
+  const [slotTimes, setSlotTimes] = useState("12:00,19:00");
   const MAX_VIDEOS = 1000;
   const [maxVideos, setMaxVideos] = useState("1000");
   const [timezone, setTimezone] = useState("Asia/Makassar");

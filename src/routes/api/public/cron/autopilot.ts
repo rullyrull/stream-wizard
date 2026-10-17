@@ -5,7 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
  * 1. Pindai Google Drive untuk semua channel yang autopilot-nya aktif
  * 2. Proses antrean upload yang sudah jatuh tempo
  *
- * Diamankan dengan header `apikey` berisi publishable key project.
+ * Diamankan dengan autentikasi penjadwal terkelola.
  */
 async function handle(request: Request) {
   const { authenticateCronRequest } = await import("@/integrations/supabase/cron-auth");
@@ -26,14 +26,6 @@ async function handle(request: Request) {
     await import("@/lib/daily-report.server")
       .then(({ buildDailyReports }) => buildDailyReports())
       .catch((e) => console.error("[daily report]", e));
-    // Potensi viral otomatis, sekali sehari pukul 06:00 WIB (23:00 UTC):
-    // video baru di Drive dinilai dulu, baru boleh dijadwalkan.
-    const nowUtc = new Date();
-    if (nowUtc.getUTCHours() === 23 && nowUtc.getUTCMinutes() === 0) {
-      await import("@/lib/viral.server")
-        .then(({ autoRateNewDriveVideos }) => autoRateNewDriveVideos())
-        .catch((e) => console.error("[viral auto]", e));
-    }
     if (!masterOn) {
       const analytics = await import("@/lib/analytics.server");
       const stats = await analytics.collectVideoStats().catch((e) => ({ error: String(e) }));
@@ -54,8 +46,16 @@ async function handle(request: Request) {
     const stats = await analytics.collectVideoStats().catch((e) => ({ error: String(e) }));
     const insights = await analytics.refreshChannelInsights().catch((e) => ({ error: String(e) }));
     const enabled = await autopilot.enableAutopilotForAllChannels().catch((e) => ({ error: String(e) }));
+    // Video baru dinilai setiap pemindaian; hasil tersimpan mencegah penilaian ulang.
+    // Jangan bergantung pada satu menit harian yang mudah terlewat.
+    const scanDue = new Date().getUTCMinutes() % 15 === 0;
+    const viral = scanDue
+      ? await import("@/lib/viral.server")
+          .then(({ autoRateNewDriveVideos }) => autoRateNewDriveVideos())
+          .catch((e) => ({ error: String(e) }))
+      : { skipped: true };
     // Pindai Drive cukup tiap 15 menit agar hemat kuota.
-    const scan = new Date().getUTCMinutes() % 15 === 0
+    const scan = scanDue
       ? await autopilot.scanAllAutopilots().catch((e) => ({ error: String(e) }))
       : { skipped: true };
     const uploads = await runner.processDueUploads().catch((e) => ({ error: String(e) }));
@@ -64,7 +64,7 @@ async function handle(request: Request) {
     const audit = await import("@/lib/audit.server")
       .then(({ auditPublishedUploads }) => auditPublishedUploads())
       .catch((e) => ({ error: String(e) }));
-    return new Response(JSON.stringify({ ok: true, stats, insights, enabled, scan, uploads, republished, audit }), {
+    return new Response(JSON.stringify({ ok: true, stats, insights, enabled, viral, scan, uploads, republished, audit }), {
       headers: { "Content-Type": "application/json" },
     });
 

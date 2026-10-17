@@ -1,5 +1,10 @@
 # Task roadmap
 
+## Perbaikan otomatisasi 17 Oktober
+- [ ] Pulihkan pengaturan utama yang hilang dan cegah proses penilaian berhenti diam-diam.
+- [ ] Nilai video baru pada setiap pemindaian, bukan hanya satu menit tertentu.
+- [ ] Uji penilaian dan antrean dengan video Drive yang nyata; laporkan hasil tanpa menjanjikan posting yang belum terbukti.
+
 ## Done this session
 - [x] Hapus kartu "Kredensial Google OAuth" dari halaman utama (Client ID & secret sekarang lewat secret proyek saja)
 - [x] Hapus panel "Otomatis per channel" dari halaman utama (duplikat — switch aktif/jeda sudah ada di tiap baris Jadwal upload)

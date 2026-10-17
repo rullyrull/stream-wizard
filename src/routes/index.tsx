@@ -511,7 +511,7 @@ function Home() {
       }
       return next;
     });
-  const [accMin, setAccMin] = useState(false);
+  const [accMin, setAccMin] = useState(true);
   const [chMin, setChMin] = useState<Record<string, boolean>>({});
   const fetchHistory = useMutation({
     mutationFn: (channelId: string) => fetchHistoryFn({ data: { channelId } }),

@@ -118,7 +118,7 @@ export async function rateVideos(files: DriveVideo[], channelTitle: string | nul
 export async function saveRatings(channelId: string, items: ViralItem[]) {
   if (items.length === 0) return;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  await supabaseAdmin.from("viral_ratings").upsert(
+  const { error } = await supabaseAdmin.from("viral_ratings").upsert(
     items.map((i) => ({
       drive_file_id: i.fileId,
       channel_id: channelId,
@@ -129,6 +129,7 @@ export async function saveRatings(channelId: string, items: ViralItem[]) {
     })),
     { onConflict: "drive_file_id" },
   );
+  if (error) throw new Error(`Hasil penilaian gagal disimpan: ${error.message}`);
 }
 
 /** Hapus permanen video di Drive, tandai di sistem. */
@@ -165,12 +166,20 @@ const MAX_CHANNELS = 20;
  */
 export async function autoRateNewDriveVideos() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: settings } = await supabaseAdmin
+  // Remix dapat memiliki tabel tanpa baris pengaturan utama. Pulihkan tanpa
+  // menimpa saklar atau pilihan yang sudah tersimpan.
+  const { error: setupError } = await supabaseAdmin.from("app_settings").upsert(
+    { id: "default", autopilot_enabled: true, slot_times: "12:00,19:00", timezone: "Asia/Jakarta" },
+    { onConflict: "id", ignoreDuplicates: true },
+  );
+  if (setupError) throw new Error(`Pengaturan otomatis gagal disiapkan: ${setupError.message}`);
+  const { data: settings, error: settingsError } = await supabaseAdmin
     .from("app_settings")
-    .select("id, viral_paused_reason, viral_lock_until")
-    .limit(1)
+    .select("id, autopilot_enabled, viral_paused_reason, viral_lock_until")
+    .eq("id", "default")
     .maybeSingle();
-  if (!settings) return { skipped: "no_settings" };
+  if (settingsError || !settings) throw new Error("Pengaturan otomatis tidak dapat dibaca.");
+  if (!settings.autopilot_enabled) return { skipped: "manual" };
   if (settings.viral_paused_reason) return { paused: settings.viral_paused_reason };
   if (settings.viral_lock_until && new Date(settings.viral_lock_until) > new Date())
     return { skipped: "locked" };

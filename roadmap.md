@@ -1,5 +1,10 @@
 # Task roadmap
 
+## Perbaikan otomatisasi 17 Oktober
+- [x] Pulihkan pengaturan utama yang hilang dan cegah proses penilaian berhenti diam-diam.
+- [x] Nilai video baru pada setiap pemindaian, bukan hanya satu menit tertentu (perubahan perlu dipublish).
+- [ ] Verifikasi antrean dan posting otomatis setelah penilaian berhasil — terblokir kredit AI habis (402); uji nyata menemukan 26 video Drive tetapi belum ada hasil penilaian.
+
 ## Done this session
 - [x] Hapus kartu "Kredensial Google OAuth" dari halaman utama (Client ID & secret sekarang lewat secret proyek saja)
 - [x] Hapus panel "Otomatis per channel" dari halaman utama (duplikat — switch aktif/jeda sudah ada di tiap baris Jadwal upload)

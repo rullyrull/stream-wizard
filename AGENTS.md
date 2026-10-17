@@ -10,4 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Automated viral screening must ensure the singleton settings row exists without overwriting user choices; remixes can copy schema without that row.
-- Screen new Drive videos before each periodic autopilot scan, reusing stored ratings, so queue creation does not depend on an exact daily minute.
+- AI viral screening is optional for scheduling: unrated Drive videos are queued, only videos rated "tidak" are skipped, so uploads never stall when AI credits run out.

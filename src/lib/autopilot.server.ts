@@ -67,15 +67,13 @@ export async function scanAutopilot(row: AutopilotRow) {
     .in("status", ["scheduled", "uploading", "done"])
     .in("drive_file_id", files.map((f) => f.id));
   const taken = new Set((existing ?? []).map((r) => r.drive_file_id));
-  // Video baru harus lolos penilaian potensi viral harian dulu sebelum dijadwalkan.
+  // Penilaian AI tidak wajib: video belum dinilai tetap dijadwalkan.
+  // Hanya video yang jelas dinilai "tidak" berpotensi yang dilewati.
   const { data: ratings } = await supabaseAdmin
     .from("viral_ratings")
     .select("drive_file_id, verdict")
     .in("drive_file_id", files.map((f) => f.id));
-  const passed = new Set(
-    (ratings ?? []).filter((r) => r.verdict === "berpotensi").map((r) => r.drive_file_id),
-  );
-  for (const f of files) if (!passed.has(f.id)) taken.add(f.id);
+  for (const r of ratings ?? []) if (r.verdict === "tidak") taken.add(r.drive_file_id);
 
   // File yang sudah pernah selesai diunggah tidak perlu disimpan lagi di Drive:
   // hapus permanen supaya folder bersih dan tidak terpindai berulang.

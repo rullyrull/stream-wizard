@@ -139,6 +139,78 @@ export function decorateForKind(job: UploadJob) {
 }
 
 
+/** Judul, deskripsi SEO, dan tag final untuk sebuah upload. */
+export async function buildFinalMeta(job: UploadJob) {
+  const finalTitle = job.title;
+  const { getChannelCaption } = await import("./channel-caption.server");
+  const caption = await getChannelCaption(job.channelId);
+  const topic = job.title.replace(/#\w+/g, "").trim();
+  const { generateVideoMetadata } = await import("./ai-metadata.server");
+  const { loadChannelGuidance } = await import("./analytics.server");
+  const guidance = await loadChannelGuidance(job.channelId).catch(() => null);
+  const ai = await generateVideoMetadata({ fileName: topic, channelTitle: null, kind: "reels", guidance }).catch(
+    () => null,
+  );
+  // Deskripsi SEO: AI (hook + isi + ajakan) diutamakan; caption channel ditambahkan di bawahnya.
+  const parts = [ai?.description, caption, !ai?.description && !caption ? topic : null]
+    .map((p) => p?.trim())
+    .filter(Boolean);
+  const body = (parts.length ? parts.join("\n\n") : job.description || topic).trim();
+  const sourceLine = ai?.source ? `Sumber video: ${ai.source}` : null;
+  const finalDescription = [body, sourceLine, buildFiveHashtags(topic, ai?.hashtags ?? [])]
+    .filter(Boolean)
+    .join("\n\n")
+    .slice(0, 4500);
+  const finalTags: string[] = (ai?.tags ?? []).slice(0, 10);
+  return { finalTitle, finalDescription, finalTags };
+}
+
+/** Setelah YouTube menerima video: hapus file Drive, cek kunci privasi, tandai selesai. */
+export async function finalizeUpload(params: {
+  rowId: string;
+  fileId: string;
+  videoId: string;
+  privacy: UploadJob["privacy"];
+  channelId: string | null;
+  title: string;
+  description: string;
+}) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  let driveDeleted = true;
+  let driveDeleteError: string | null = null;
+  try {
+    const { getDriveAccessToken } = await import("./youtube.server");
+    const { deleteDriveFile } = await import("./drive.server");
+    const accessToken = await getDriveAccessToken(params.channelId);
+    await deleteDriveFile(params.fileId, accessToken);
+  } catch (delErr) {
+    driveDeleted = false;
+    driveDeleteError = delErr instanceof Error ? delErr.message : String(delErr);
+  }
+
+  const { checkVideoLocked } = await import("./youtube.server");
+  const lockWarning = await checkVideoLocked(params.videoId, params.privacy, params.channelId);
+  const notes = [
+    lockWarning,
+    driveDeleted ? null : `Upload sukses, tapi file Drive gagal dihapus: ${driveDeleteError}`,
+  ].filter(Boolean);
+
+  await supabaseAdmin
+    .from("uploads")
+    .update({
+      status: "done",
+      title: params.title,
+      description: params.description,
+      video_id: params.videoId,
+      published_at: new Date().toISOString(),
+      upload_session_url: null,
+      error: notes.length ? notes.join(" | ") : null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", params.rowId);
+  return { driveDeleted };
+}
+
 /** Jalankan upload untuk satu baris `uploads` yang sudah ada di database. */
 export async function runUploadRow(rowId: string, job: UploadJob, alreadyClaimed = false) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -156,29 +228,7 @@ export async function runUploadRow(rowId: string, job: UploadJob, alreadyClaimed
 
   try {
     if (job.kind === "reels") await assertReelsCompatible(fileId, job.channelId);
-
-    // Judul = nama file + #shorts. Deskripsi = caption channel (atau kalimat AI
-    // bila caption kosong) lalu ditutup tepat 5 hashtag yang relevan dengan topik.
-    const finalTitle = job.title;
-    const { getChannelCaption } = await import("./channel-caption.server");
-    const caption = await getChannelCaption(job.channelId);
-    const topic = job.title.replace(/#\w+/g, "").trim();
-    const { generateVideoMetadata } = await import("./ai-metadata.server");
-    const { loadChannelGuidance } = await import("./analytics.server");
-    const guidance = await loadChannelGuidance(job.channelId).catch(() => null);
-    const ai = await generateVideoMetadata({ fileName: topic, channelTitle: null, kind: "reels", guidance });
-    // Deskripsi SEO: AI (hook + isi + ajakan) diutamakan; caption channel ditambahkan di bawahnya.
-    const parts = [ai?.description, caption, !ai?.description && !caption ? topic : null]
-      .map((p) => p?.trim())
-      .filter(Boolean);
-    const body = (parts.length ? parts.join("\n\n") : job.description || topic).trim();
-    // Sumber video hasil analisis AI (narasumber/acara asli) dicantumkan sebelum hashtag.
-    const sourceLine = ai?.source ? `Sumber video: ${ai.source}` : null;
-    const finalDescription = [body, sourceLine, buildFiveHashtags(topic, ai?.hashtags ?? [])]
-      .filter(Boolean)
-      .join("\n\n")
-      .slice(0, 4500);
-    const finalTags: string[] = (ai?.tags ?? []).slice(0, 10);
+    const { finalTitle, finalDescription, finalTags } = await buildFinalMeta(job);
 
     const videoId = await uploadDriveVideoToYouTube({
       fileId,
@@ -190,41 +240,15 @@ export async function runUploadRow(rowId: string, job: UploadJob, alreadyClaimed
       tags: finalTags,
     });
 
-    // Thumbnail kustom dilewati: semua video berformat Shorts (thumbnail selalu gagal).
-    const thumbNote: string | null = null;
-    // Hapus file sumber di Google Drive secara permanen setelah upload sukses.
-    let driveDeleted = true;
-    let driveDeleteError: string | null = null;
-    try {
-      const { getDriveAccessToken } = await import("./youtube.server");
-      const { deleteDriveFile } = await import("./drive.server");
-      const accessToken = await getDriveAccessToken(job.channelId);
-      await deleteDriveFile(fileId, accessToken);
-    } catch (delErr) {
-      driveDeleted = false;
-      driveDeleteError = delErr instanceof Error ? delErr.message : String(delErr);
-    }
-
-    const { checkVideoLocked } = await import("./youtube.server");
-    const lockWarning = await checkVideoLocked(videoId, job.privacy, job.channelId);
-    const notes = [
-      lockWarning,
-      thumbNote,
-      driveDeleted ? null : `Upload sukses, tapi file Drive gagal dihapus: ${driveDeleteError}`,
-    ].filter(Boolean);
-
-    await supabaseAdmin
-      .from("uploads")
-      .update({
-        status: "done",
-        title: finalTitle,
-        description: finalDescription,
-        video_id: videoId,
-        published_at: new Date().toISOString(),
-        error: notes.length ? notes.join(" | ") : null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", rowId);
+    const { driveDeleted } = await finalizeUpload({
+      rowId,
+      fileId,
+      videoId,
+      privacy: job.privacy,
+      channelId: job.channelId,
+      title: finalTitle,
+      description: finalDescription,
+    });
     return { videoId, url: `https://youtu.be/${videoId}`, driveDeleted };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -234,7 +234,7 @@ export async function processUploadStep(budgetMs = 20_000) {
   const supabaseAdmin = await db();
   const startedAt = Date.now();
   const deadline = startedAt + budgetMs;
-  const results: Array<Record<string, unknown>> = [];
+  const results: Array<{ id: string; state: string; error?: string; videoId?: string; offset?: number; total?: number }> = [];
 
   // 1) Pulihkan baris macet dari cara upload lama (tanpa sesi) → masuk antrean lagi.
   const stuckBefore = new Date(Date.now() - LEGACY_STUCK_MS).toISOString();

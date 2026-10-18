@@ -582,7 +582,7 @@ export async function fetchAllOwnedChannels(accessToken: string) {
 
 
 /** Kategori video terbaru di channel (biasanya upload manual). Fallback: Education. */
-async function getChannelCategory(accessToken: string): Promise<string> {
+export async function getChannelCategory(accessToken: string): Promise<string> {
   try {
     const h = { Authorization: `Bearer ${accessToken}` };
     const ch = await fetch(

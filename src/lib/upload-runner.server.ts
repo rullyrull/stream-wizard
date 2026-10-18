@@ -260,76 +260,13 @@ export async function runUploadRow(rowId: string, job: UploadJob, alreadyClaimed
   }
 }
 
-/** Proses semua jadwal yang sudah jatuh tempo. */
-export async function processDueUploads() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  // Channel yang sedang dijeda tidak boleh mengunggah apa pun.
-  const { data: paused } = await supabaseAdmin
-    .from("channel_autopilot")
-    .select("channel_id")
-    .eq("enabled", false);
-  const pausedIds = new Set((paused ?? []).map((r) => r.channel_id));
-
-  const { data } = await supabaseAdmin
-    .from("uploads")
-    .select("id, title, description, drive_url, privacy, channel_id, kind, scheduled_at")
-    .eq("status", "scheduled")
-    .lte("scheduled_at", new Date().toISOString())
-    .order("scheduled_at", { ascending: true })
-    .limit(20);
-
-  // Batas harian: maksimal DAILY_LIMIT video per channel dalam 24 jam terakhir,
-  // agar YouTube tidak menganggap unggahan massal sebagai spam. Sisanya menunggu.
-  const DAILY_LIMIT = 3;
-  const since = new Date(Date.now() - 24 * 3600_000).toISOString();
-  const { data: recent } = await supabaseAdmin
-    .from("uploads")
-    .select("channel_id")
-    .in("status", ["done", "uploading"])
-    .gte("updated_at", since);
-  const usedToday = new Map<string, number>();
-  for (const r of recent ?? []) {
-    const key = r.channel_id ?? "_";
-    usedToday.set(key, (usedToday.get(key) ?? 0) + 1);
-  }
-  const rows = (data ?? [])
-    .filter((r) => !r.channel_id || !pausedIds.has(r.channel_id))
-    .filter((r) => {
-      const key = r.channel_id ?? "_";
-      const used = usedToday.get(key) ?? 0;
-      if (used >= DAILY_LIMIT) return false;
-      usedToday.set(key, used + 1);
-      return true;
-    })
-    .slice(0, 3);
-  const results: Array<{ id: string; ok: boolean; error?: string }> = [];
-
-  for (const row of rows) {
-    // Klaim baris secara bersyarat: hanya satu proses yang boleh mengubah
-    // status "scheduled" → "uploading", sehingga cron yang tumpang tindih
-    // tidak mengunggah video yang sama dua kali.
-    const { data: claimed } = await supabaseAdmin
-      .from("uploads")
-      .update({ status: "uploading", error: null, updated_at: new Date().toISOString() })
-      .eq("id", row.id)
-      .eq("status", "scheduled")
-      .select("id");
-    if (!claimed || claimed.length === 0) continue;
-    try {
-      await runUploadRow(row.id, {
-        driveUrl: row.drive_url,
-        title: row.title,
-        description: row.description ?? "",
-        privacy: (row.privacy as UploadJob["privacy"]) ?? "private",
-        channelId: row.channel_id ?? null,
-        kind: row.kind === "reels" ? "reels" : "video",
-      }, true);
-      results.push({ id: row.id, ok: true });
-    } catch (err) {
-      results.push({ id: row.id, ok: false, error: err instanceof Error ? err.message : String(err) });
-    }
-  }
-  return { processed: results.length, results };
+/**
+ * Proses jadwal yang sudah jatuh tempo secara bertahap (potongan per panggilan),
+ * supaya upload tetap selesai walau tiap panggilan otomatis hanya hidup sebentar.
+ */
+export async function processDueUploads(budgetMs = 20_000) {
+  const { processUploadStep } = await import("./chunked-upload.server");
+  return processUploadStep(budgetMs);
 }
 
 /**

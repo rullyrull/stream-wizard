@@ -303,6 +303,11 @@ export type Database = {
           status: string
           title: string
           updated_at: string
+          upload_attempts: number
+          upload_offset: number
+          upload_session_url: string | null
+          upload_tags: string[] | null
+          upload_total_bytes: number | null
           video_duration_ms: number | null
           video_height: number | null
           video_id: string | null
@@ -329,6 +334,11 @@ export type Database = {
           status?: string
           title: string
           updated_at?: string
+          upload_attempts?: number
+          upload_offset?: number
+          upload_session_url?: string | null
+          upload_tags?: string[] | null
+          upload_total_bytes?: number | null
           video_duration_ms?: number | null
           video_height?: number | null
           video_id?: string | null
@@ -355,6 +365,11 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          upload_attempts?: number
+          upload_offset?: number
+          upload_session_url?: string | null
+          upload_tags?: string[] | null
+          upload_total_bytes?: number | null
           video_duration_ms?: number | null
           video_height?: number | null
           video_id?: string | null
